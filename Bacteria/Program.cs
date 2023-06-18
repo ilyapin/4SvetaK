@@ -1,66 +1,62 @@
-﻿using System;
-using System.Reflection;
-
-namespace Bacteria 
+﻿namespace Bacteria
 {
     internal class Program
     {
-        //class VolumeData
-        //{
-        //    public int Volume;
-        //    public int Count;
-        //    public int MaxGrouth;
-        //};
-
         static void Main(string[] args)
         {
             Console.WriteLine("Bacteria test task");
+            if (args.Contains("-test")) 
+            {
+                Test();
+                return;
+            }
+
             var hive = GetInput();
-            // only volume matters
-            //var byVolume = input.GroupBy(volume => volume)
-            //                    .OrderBy(group => group.Key)
-            //                    .Select(group => new VolumeData() { Volume = group.Key, Count = group.Count() })
-            //                    .ToArray();
-            //foreach (var item in byVolume) {
-            //    item.MaxGrouth = MaxVolumeGrouth(byVolume, item.Volume);
-            //    Console.WriteLine($"{item.Volume} can grow to {item.MaxGrouth}");
-            //}
-
-
-            // simple
-            var maxSizes = new int[hive.Length];
-            for (int i = 0; i < hive.Length; i++)
+            var winConditions = CalcWinConditions(hive);
+            foreach(var i in winConditions)
             {
-                maxSizes[i] = MaxVolumeGrowth(hive, i);
-            }
-            for (int i = 0; i < hive.Length; i++)
-            {
-                Console.WriteLine($"{hive[i]} can grow to {maxSizes[i]}");
-            }
+                Console.WriteLine(i ? "1" : "0");
+            } 
+            return;
+        }
+
+        static bool[] CalcWinConditions(IReadOnlyList<int> hive)
+        {
+            var result = new bool[hive.Count];
             // binary
             var max = hive.Last();
             var left = 0;
-            var right = hive.Length - 1;
+            var right = hive.Count - 1;
+            var mid = -1;
+            var midValue = -1;
             while (left <= right)
             {
-                var mid = (left + right) / 2;
-                var current = MaxVolumeGrowth(hive, mid);
-                if (current < max)
+                mid = (left + right) / 2;
+                midValue = MaxVolumeGrowth(hive, mid);
+                // Console.WriteLine($"{left} -> {mid} <- {right} = {midValue}");
+                if (midValue > max)
                     right = mid - 1;
                 else
                     left = mid + 1;
             }
-
-            return;
+            if (mid > 1)
+                Array.Fill(result, false, 0, mid - 1);
+            result[mid] = (midValue > max);
+            if (mid < (result.Length - 1))
+                Array.Fill(result, true, mid + 1, result.Length - mid - 1);
+            return result;
         }
 
         static int[] GetInput()
         {
-            //?? todo read from console
-            return new int[] { 1, 1, 3, 4 };
+            var len = Convert.ToInt32(Console.ReadLine());
+            var result = new int[len];
+            for (int i = 0; i < len; i++)
+                result[i] = Convert.ToInt32(Console.ReadLine());
+            return result;
         }
 
-        static int MaxVolumeGrowth(IList<int> items, int index)
+        static int MaxVolumeGrowth(IReadOnlyList<int> items, int index)
         {
             var result = items[index];
             for (int i = 0; i < index; i++)
@@ -80,17 +76,38 @@ namespace Bacteria
             return result;
         }
 
-        //static int MaxVolumeGrouth(IList<VolumeData> byVolume, int volume)
-        //{
-        //    var result = volume;
-        //    for (int i = 0; i<byVolume.Count; i++)
-        //    {
-        //        if (result > byVolume[i].Volume)
-        //            result += byVolume[i].Volume * ((volume == byVolume[i].Volume) ? byVolume[i].Count - 1 : byVolume[i].Count);
-        //        if (result < byVolume[i].Volume)
-        //            break;
-        //    }
-        //    return result;
-        //}
+        static void Test()
+        {
+            var hive = GenTestData();
+            var maxVolumes = GenMaxGrowth(hive);
+            var winConditions = CalcWinConditions(hive);
+            var max = hive.Last();
+            for (int i = 0; i < hive.Length; i++)
+            {
+                Console.WriteLine($"{hive[i]} can grow to {maxVolumes[i]}. {(winConditions[i] ? "1" : "0")}");
+                if (maxVolumes[i] > max != winConditions[i])
+                    throw new Exception("Test failed");
+            }
+            Console.WriteLine("Test complete");
+        }
+
+        static int[] GenTestData(int maxLen = 16, int maxVolume = 5)
+        {
+            var rnd = new Random();
+            var len = rnd.Next(1, maxLen);
+            var result = new int[len];
+            for (int i = 0; i < len; i++)
+                result[i] = rnd.Next(1, maxVolume);
+            Array.Sort(result);
+            return result;
+        }
+
+        static int[] GenMaxGrowth(IReadOnlyList<int> hive)
+        {
+            var result = new int[hive.Count];
+            for (int i = 0; i < hive.Count; i++)
+                result[i] = MaxVolumeGrowth(hive, i);
+            return result;
+        }
     }
 }
