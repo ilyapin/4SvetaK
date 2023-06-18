@@ -33,7 +33,6 @@
             {
                 mid = (left + right) / 2;
                 midValue = MaxVolumeGrowth(hive, mid);
-                // Console.WriteLine($"{left} -> {mid} <- {right} = {midValue}");
                 if (midValue > max)
                     right = mid - 1;
                 else
